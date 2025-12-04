@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import pyeds
 
@@ -17,41 +19,6 @@ mzvault_match_status_dictionary = {
     1: "Single match found",
     0: "No matches found",
 }
-
-level_1_headers = [
-    "L1 Name",
-    "L1 Formula",
-    "L1 Annot. Source: Predicted Compositions",
-    "L1 Annot. Source: mzCloud Search",
-    "L1 Annot. Source: mzVault Search",
-    "L1 Annot. DeltaMass [ppm]",
-    "L1 Calc. MW",
-    "L1 m/z",
-    "L1 Reference Ion",
-    "L1 RT[min]",
-    "L1 Area(Max.)",
-    "L1 mzCloud Results",
-    "L1 # mzVault Results",
-    "L1 mzCloud Best Match",
-    "L1 mzCloud Best Match Confidence",
-    "L1 mzVault Best Match",
-    "L1 mzVault Library Match: Bamba lab 34 lipid mediators library stepped NCE 10 30 45",
-    "L1 mzVault Library Match: Bamba lab 598 polar metabolites stepped NCE 10 30 45",
-    "L1 Polarity",
-    "L1 MS2",
-    "L1 MS2 Purity [%]",
-    "L1 Area file 1",
-    "L1 Area file 2",
-    "L1 Area file 3",
-    "L1 Area file 4",
-    "L1 Area file 5",
-    "L1 Peak Rating (Max.)",
-    "L1 Peak Rating file 1",
-    "L1 Peak Rating file 2",
-    "L1 Peak Rating file 3",
-    "L1 Peak Rating file 4",
-    "L1 Peak Rating file 5",
-]
 
 level_2_headers = [
     "L2 Calc. MW",
@@ -110,13 +77,22 @@ mzcloud_headers = [
 ]
 
 with pyeds.EDS(f"{filename}.cdResult") as eds:
-    # define connection path and items to keep
-    path = ["Compounds", "Compounds per File", "Features per File"]
+    # define connection paths
+    input_files_path = ["Input Files"]
+    main_path = ["Compounds", "Compounds per File", "Features per File"]
+    comp_path = ["Compounds", "mzCloud Results"]
 
-    # read data
-    items_iter = eds.ReadHierarchy(path)
+    # extract names of input files
+    input_files_iter = eds.ReadHierarchy(input_files_path)
+    input_files_names = []
+    for input_file_item in input_files_iter:
+        if input_file_item.SampleType == "Sample":
+            input_files_names.append(f"{os.path.basename(input_file_item.FileName)} ({input_file_item.StudyFileID})")
+
+    # extract data for main file
+    main_items_iter = eds.ReadHierarchy(main_path)
     main_rows = []
-    for level_1_item in items_iter:
+    for level_1_item in main_items_iter:
         if level_1_item.AnnotationMatchStatus[1] in (3, 4, 7):  # Filter based on mzCloud Search
             for level_2_item in level_1_item.Children:
                 for level_3_item in level_2_item.Children:
@@ -179,18 +155,10 @@ with pyeds.EDS(f"{filename}.cdResult") as eds:
                         ]
                     )
 
-main_df = pd.DataFrame(data=main_rows, columns=level_1_headers + level_2_headers + level_3_headers)
-main_df.to_excel(f"{filename}_test.xlsx", index=False)
-
-
-with pyeds.EDS(f"{filename}.cdResult") as eds:
-    # define connection path and items to keep
-    path = ["Compounds", "mzCloud Results"]
-
-    # read data
-    items_iter = eds.ReadHierarchy(path)
+    # extract data for comp file
+    comp_items_iter = eds.ReadHierarchy(comp_path)
     comp_rows = []
-    for level_1_item in items_iter:
+    for level_1_item in comp_items_iter:
         if level_1_item.AnnotationMatchStatus[1] in (3, 4, 7):  # Filter based on mzCloud Search
             for mz_cloud_item in level_1_item.Children:
                 comp_rows.append(
@@ -244,6 +212,37 @@ with pyeds.EDS(f"{filename}.cdResult") as eds:
                         mz_cloud_item.CompoundMatchStatus,
                     ]
                 )
+
+
+level_1_headers = [
+    "L1 Name",
+    "L1 Formula",
+    "L1 Annot. Source: Predicted Compositions",
+    "L1 Annot. Source: mzCloud Search",
+    "L1 Annot. Source: mzVault Search",
+    "L1 Annot. DeltaMass [ppm]",
+    "L1 Calc. MW",
+    "L1 m/z",
+    "L1 Reference Ion",
+    "L1 RT[min]",
+    "L1 Area(Max.)",
+    "L1 mzCloud Results",
+    "L1 # mzVault Results",
+    "L1 mzCloud Best Match",
+    "L1 mzCloud Best Match Confidence",
+    "L1 mzVault Best Match",
+    "L1 mzVault Library Match: Bamba lab 34 lipid mediators library stepped NCE 10 30 45",
+    "L1 mzVault Library Match: Bamba lab 598 polar metabolites stepped NCE 10 30 45",
+    "L1 Polarity",
+    "L1 MS2",
+    "L1 MS2 Purity [%]",
+    *[f"L1 Area {input_file_name}" for input_file_name in input_files_names],
+    "L1 Peak Rating (Max.)",
+    *[f"L1 Peak Rating {input_file_name}" for input_file_name in input_files_names],
+]
+
+main_df = pd.DataFrame(data=main_rows, columns=level_1_headers + level_2_headers + level_3_headers)
+main_df.to_excel(f"{filename}_test.xlsx", index=False)
 
 comp_df = pd.DataFrame(data=comp_rows, columns=level_1_headers + mzcloud_headers)
 comp_df.to_excel(f"{filename}_comp_test.xlsx", index=False)

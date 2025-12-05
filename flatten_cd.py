@@ -98,6 +98,7 @@ with pyeds.EDS(f"{filename}.cdResult") as eds:
                 for level_3_item in level_2_item.Children:
                     main_rows.append(
                         [
+                            level_1_item.ID,
                             level_1_item.Name,
                             level_1_item.Formula,
                             *[
@@ -163,6 +164,7 @@ with pyeds.EDS(f"{filename}.cdResult") as eds:
             for mz_cloud_item in level_1_item.Children:
                 comp_rows.append(
                     [
+                        level_1_item.ID,
                         level_1_item.Name,
                         level_1_item.Formula,
                         *[
@@ -215,6 +217,7 @@ with pyeds.EDS(f"{filename}.cdResult") as eds:
 
 
 level_1_headers = [
+    "L1 ID",
     "L1 Name",
     "L1 Formula",
     "L1 Annot. Source: Predicted Compositions",
@@ -242,7 +245,7 @@ level_1_headers = [
 ]
 
 main_df = pd.DataFrame(data=main_rows, columns=level_1_headers + level_2_headers + level_3_headers)
-main_df.to_excel(f"{filename}_test.xlsx", index=False)
+main_df.to_excel(f"{filename}_flattened.xlsx", index=False)
 
 comp_df = pd.DataFrame(data=comp_rows, columns=level_1_headers + mzcloud_headers)
-comp_df.to_excel(f"{filename}_comp_test.xlsx", index=False)
+comp_df.to_excel(f"{filename}_comp_flattened.xlsx", index=False)

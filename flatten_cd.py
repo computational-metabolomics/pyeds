@@ -6,12 +6,26 @@ import pyeds
 
 path_to_project = "X:\\data\\PrecisionTox\\Studies\\02_Phase2"
 
-batch_id = sys.argv[1]
-assay = sys.argv[2]
+try:
+    batch_id = sys.argv[1]
+    assay = sys.argv[2]
 
-species_directory = batch_id.rsplit("_", 1)[0]
-batch_directory = batch_id.split("_", 1)[1]
-cd_directory = os.path.join(path_to_project, species_directory, batch_directory, "results", "annotations", "CD_33")
+    species_directory = batch_id.rsplit("_", 1)[0]
+    batch_directory = batch_id.split("_", 1)[1]
+    cd_directory = os.path.join(path_to_project, species_directory, batch_directory, "results", "annotations", "CD_33")
+    cd_result_file = os.path.join(
+        cd_directory,
+        batch_directory,
+        f"{assay}.cdResult",
+    )
+except IndexError:  # No command line arguments
+    print(
+        "Batch and assay not specified. Extracting data from the first .cdResult file in the current directory instead."
+    )
+    cd_directory = os.getcwd()
+    cd_result_file = [filename for filename in os.listdir(cd_directory) if filename.endswith(".cdResult")][0]
+    assay = os.path.splitext(os.path.basename(cd_result_file))[0]
+
 
 match_status_dictionary = {
     7: "Not the top hit",
@@ -84,13 +98,7 @@ mzcloud_headers = [
     "mzCloud Compound Match",
 ]
 
-with pyeds.EDS(
-    os.path.join(
-        cd_directory,
-        batch_directory,
-        f"{assay}.cdResult",
-    )
-) as eds:
+with pyeds.EDS(cd_result_file) as eds:
     # define connection paths
     input_files_path = ["Input Files"]
     main_path = ["Compounds", "Compounds per File", "Features per File"]

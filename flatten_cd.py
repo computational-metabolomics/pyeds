@@ -1,9 +1,17 @@
 import os
+import sys
 
 import pandas as pd
 import pyeds
 
-filename = "HILIC_POS_5ppm"
+path_to_project = "X:\\data\\PrecisionTox\\Studies\\02_Phase2"
+
+batch_id = sys.argv[1]
+assay = sys.argv[2]
+
+species_directory = batch_id.rsplit("_", 1)[0]
+batch_directory = batch_id.split("_", 1)[1]
+cd_directory = os.path.join(path_to_project, species_directory, batch_directory, "results", "annotations", "CD_33")
 
 match_status_dictionary = {
     7: "Not the top hit",
@@ -76,7 +84,13 @@ mzcloud_headers = [
     "mzCloud Compound Match",
 ]
 
-with pyeds.EDS(f"{filename}.cdResult") as eds:
+with pyeds.EDS(
+    os.path.join(
+        cd_directory,
+        batch_directory,
+        f"{assay}.cdResult",
+    )
+) as eds:
     # define connection paths
     input_files_path = ["Input Files"]
     main_path = ["Compounds", "Compounds per File", "Features per File"]
@@ -245,7 +259,7 @@ level_1_headers = [
 ]
 
 main_df = pd.DataFrame(data=main_rows, columns=level_1_headers + level_2_headers + level_3_headers)
-main_df.to_excel(f"{filename}_flattened.xlsx", index=False)
+main_df.to_excel(os.path.join(cd_directory, f"{assay}_flattened.xlsx"), index=False)
 
 comp_df = pd.DataFrame(data=comp_rows, columns=level_1_headers + mzcloud_headers)
-comp_df.to_excel(f"{filename}_comp_flattened.xlsx", index=False)
+comp_df.to_excel(os.path.join(cd_directory, f"{assay}_comp_flattened.xlsx"), index=False)

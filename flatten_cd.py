@@ -105,7 +105,11 @@ def extract_data(output_file_directory: str, path_to_cd_result: str, output_file
         main_items_iter = eds.ReadHierarchy(main_path)
         main_rows = []
         for level_1_item in main_items_iter:
-            if level_1_item.AnnotationMatchStatus[1] in (3, 4, 7):  # Filter based on mzCloud Search
+            if level_1_item.AnnotationMatchStatus.GetLevel(1).Name in (
+                "Partial match",
+                "Full match",
+                "Not the top hit",
+            ):  # Filter based on mzCloud Search
                 for level_2_item in level_1_item.Children:
                     for level_3_item in level_2_item.Children:
                         main_rows.append(
@@ -114,8 +118,8 @@ def extract_data(output_file_directory: str, path_to_cd_result: str, output_file
                                 level_1_item.Name,
                                 level_1_item.Formula,
                                 *[
-                                    match_status_dictionary[status_number]
-                                    for status_number in level_1_item.AnnotationMatchStatus
+                                    level_1_item.AnnotationMatchStatus.GetLevel(box_number).Name
+                                    for box_number in range(len(level_1_item.AnnotationMatchStatus))
                                 ],
                                 level_1_item.AnnotationDeltaMassInPPM,
                                 level_1_item.MolecularWeight,
@@ -129,8 +133,8 @@ def extract_data(output_file_directory: str, path_to_cd_result: str, output_file
                                 level_1_item.mzCloudBestMatchConfidence,
                                 level_1_item.mzVaultBestMatch,
                                 *[
-                                    mzvault_match_status_dictionary[status_number]
-                                    for status_number in level_1_item.mzVaultLibraryMatches
+                                    level_1_item.mzVaultLibraryMatches.GetLevel(box_number).Name
+                                    for box_number in range(len(level_1_item.mzVaultLibraryMatches))
                                 ],
                                 level_1_item.Polarity,
                                 level_1_item.MSnStatus,
@@ -180,8 +184,8 @@ def extract_data(output_file_directory: str, path_to_cd_result: str, output_file
                             level_1_item.Name,
                             level_1_item.Formula,
                             *[
-                                match_status_dictionary[status_number]
-                                for status_number in level_1_item.AnnotationMatchStatus
+                                level_1_item.AnnotationMatchStatus.GetLevel(box_number).Name
+                                for box_number in range(len(level_1_item.AnnotationMatchStatus))
                             ],
                             level_1_item.AnnotationDeltaMassInPPM,
                             level_1_item.MolecularWeight,
@@ -195,8 +199,8 @@ def extract_data(output_file_directory: str, path_to_cd_result: str, output_file
                             level_1_item.mzCloudBestMatchConfidence,
                             level_1_item.mzVaultBestMatch,
                             *[
-                                mzvault_match_status_dictionary[status_number]
-                                for status_number in level_1_item.mzVaultLibraryMatches
+                                level_1_item.mzVaultLibraryMatches.GetLevel(box_number).Name
+                                for box_number in range(len(level_1_item.mzVaultLibraryMatches))
                             ],
                             level_1_item.Polarity,
                             level_1_item.MSnStatus,
